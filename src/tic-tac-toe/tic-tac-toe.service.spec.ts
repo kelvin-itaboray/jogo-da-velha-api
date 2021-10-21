@@ -122,6 +122,7 @@ describe('TicTacToeService', () => {
       });
     });
 
+    // FIXME consertar falsos-positivos
     describe('if the next move can possibly create a fork for player o', () => {
       describe('and player o currently has positions 5 and 9 marked', () => {
         it('should create a fork by placing a mark at position 3 in the board', () => {
@@ -142,6 +143,7 @@ describe('TicTacToeService', () => {
       });
     });
 
+    // FIXME consertar falsos-positivos
     describe('if the next move can possibly create a fork for player x', () => {
       describe('and player x currently has positions 5 and 9 marked', () => {
         it('should block the fork by placing a mark at position 3 in the board', () => {
@@ -184,7 +186,7 @@ describe('TicTacToeService', () => {
 
         describe('and an empty edge is available', () => {
           it('should place a mark at first available edge', () => {
-            expect(service.makeMove(' o oxx   ')).toEqual(' o oxx o ');
+            expect(service.makeMove('xoxoxxo o')).toEqual('xoxoxxooo');
           });
         });
       });
