@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TicTacToeException } from './tic-tac-toe.exception';
 import { TicTacToeService } from './tic-tac-toe.service';
 
 describe('TicTacToeService', () => {
@@ -17,7 +18,15 @@ describe('TicTacToeService', () => {
     describe('if it is not player o turn', () => {
       it('should return BadRequestException', () => {
         expect(() => service.makeMove('    o    ')).toThrow(
-          new BadRequestException('TODO EXCEPTION'),
+          new BadRequestException(TicTacToeException.INVALID_PLAYER_TURN),
+        );
+      });
+    });
+
+    describe('if there are no moves left', () => {
+      it('should return BadRequestException', () => {
+        expect(() => service.makeMove('xoxoxoxox')).toThrow(
+          new BadRequestException(TicTacToeException.NO_MOVES_LEFT),
         );
       });
     });

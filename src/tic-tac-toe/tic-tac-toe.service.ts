@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Board } from './classes/board';
 import { Sequence } from './classes/sequence';
+import { BoardPosition } from './enums/board-position.enum';
 import { Mark } from './enums/mark.enum';
+import { SequencePosition } from './enums/sequence-position.enum';
+import { TicTacToeException } from './tic-tac-toe.exception';
 
 @Injectable()
 export class TicTacToeService {
   public makeMove(boardText: string): string {
-    // TODO validar se é a vez do jogador o
+    this.isValidTurn(boardText);
 
     const board = new Board(boardText);
     const nextMovePosition = this.chooseMove(board);
@@ -15,35 +18,35 @@ export class TicTacToeService {
   }
 
   private chooseMove(board: Board): number {
-    let nextMove = -1;
+    return (
+      this.win(board) ??
+      this.block(board) ??
+      this.fork(board) ??
+      this.blockFork(board) ??
+      this.playCenter(board) ??
+      this.playOppositeCorner(board) ??
+      this.playEmptyCorner(board) ??
+      this.playEmptySide(board)
+    );
+  }
 
-    nextMove = this.win(board);
-    if (nextMove !== -1) return nextMove;
+  private isValidTurn(board: string): void {
+    const boardArray = Array.from(board);
+    const playerOMarks = boardArray.filter((mark) => mark === Mark.PLAYER_O);
+    const playerXMarks = boardArray.filter((mark) => mark === Mark.PLAYER_X);
 
-    nextMove = this.block(board);
-    if (nextMove !== -1) return nextMove;
+    const isPlayerOTurn =
+      playerOMarks.length === playerXMarks.length ||
+      playerOMarks.length + 1 === playerXMarks.length;
+    if (!isPlayerOTurn) {
+      throw new BadRequestException(TicTacToeException.INVALID_PLAYER_TURN);
+    }
 
-    nextMove = this.fork(board);
-    if (nextMove !== -1) return nextMove;
-
-    nextMove = this.blockFork(board);
-    if (nextMove !== -1) return nextMove;
-
-    nextMove = this.playCenter(board);
-    if (nextMove !== -1) return nextMove;
-
-    nextMove = this.playOppositeCorner(board);
-    if (nextMove !== -1) return nextMove;
-
-    nextMove = this.playEmptyCorner(board);
-    if (nextMove !== -1) return nextMove;
-
-    nextMove = this.playEmptySide(board);
-    if (nextMove !== -1) return nextMove;
-
-    // TODO validar se a posição escolhida é uma posição válida no tabuleiro
-
-    return -1;
+    const hasMovesAvailablesToPlay =
+      playerOMarks.length + playerXMarks.length < boardArray.length;
+    if (!hasMovesAvailablesToPlay) {
+      throw new BadRequestException(TicTacToeException.NO_MOVES_LEFT);
+    }
   }
 
   private updateBoardWithNextMove(
@@ -74,16 +77,14 @@ export class TicTacToeService {
   }
 
   private getWinningPosition(marks: Mark[], playerMark: Mark): number {
-    const hasTwoMarks =
-      marks.filter((currentMark) => currentMark === playerMark).length === 2;
+    const hasTwoPlayerMarks =
+      marks.filter((mark) => mark === playerMark).length === 2;
     const hasOneEmptySpace =
-      marks.filter((currentMark) => currentMark === Mark.EMPTY).length === 1;
+      marks.filter((mark) => mark === Mark.EMPTY).length === 1;
 
-    if (hasTwoMarks && hasOneEmptySpace) {
+    if (hasTwoPlayerMarks && hasOneEmptySpace) {
       return marks.indexOf(Mark.EMPTY);
     }
-
-    return -1;
   }
 
   private fork(board: Board): number {
@@ -102,8 +103,6 @@ export class TicTacToeService {
     );
 
     if (intersectionPosition.length >= 1) return intersectionPosition[0];
-
-    return -1;
   }
 
   private blockFork(board: Board): number {
@@ -123,18 +122,18 @@ export class TicTacToeService {
     if (intersections.length === 1) return intersections[0];
 
     for (const { startOffset, nextValueOffset, marks } of board.sequences) {
-      const hasOnePlayerOMark =
-        marks.filter((mark) => mark === Mark.PLAYER_O).length === 1;
-      const hasTwoEmptySpaces =
-        marks.filter((mark) => mark === Mark.EMPTY).length === 2;
-      if (hasOnePlayerOMark && hasTwoEmptySpaces) {
+      if (this.isIntersectableSequence(marks, Mark.PLAYER_O)) {
         const markPositions = marks.map((_, index) => index);
 
         for (const markPosition of markPositions) {
           if (marks[markPosition] === Mark.EMPTY) {
             const updatedBoard = this.updateBoardWithNextMove(
-              board.board,
-              startOffset + markPosition * nextValueOffset,
+              board.boardText,
+              this.getDefinitiveMarkPosition(
+                startOffset,
+                nextValueOffset,
+                markPosition,
+              ),
             );
             const boardObject = new Board(updatedBoard);
 
@@ -155,7 +154,11 @@ export class TicTacToeService {
             ];
 
             if (newBoardIntersections.length < intersections.length) {
-              return startOffset + markPosition * nextValueOffset;
+              return this.getDefinitiveMarkPosition(
+                startOffset,
+                nextValueOffset,
+                markPosition,
+              );
             }
           }
         }
@@ -163,8 +166,6 @@ export class TicTacToeService {
     }
 
     if (intersections.length > 0) return intersections[0];
-
-    return -1;
   }
 
   private getIntersections(
@@ -175,19 +176,14 @@ export class TicTacToeService {
     const intersections: number[] = [];
 
     for (const sequence of sequences) {
-      const hasOnePlayerOMark =
-        sequence.marks.filter((mark) => mark === playerMark).length === 1;
-      const hasTwoEmptySpaces =
-        sequence.marks.filter((mark) => mark === Mark.EMPTY).length === 2;
-
-      if (hasOnePlayerOMark && hasTwoEmptySpaces) {
+      if (this.isIntersectableSequence(sequence.marks, playerMark)) {
         const intersectionPosition = this.getInsersectionPosition(
           sequencesToCompare,
           sequence,
           playerMark,
         );
 
-        if (intersectionPosition !== -1) {
+        if (this.isValidBoardPosition(intersectionPosition)) {
           intersections.push(intersectionPosition);
         }
       }
@@ -202,37 +198,48 @@ export class TicTacToeService {
     playerMark: Mark,
   ): number {
     for (const { startOffset, nextValueOffset, marks } of sequences) {
-      const hasOnePlayerOMark =
-        marks.filter((mark) => mark === playerMark).length === 1;
-      const hasTwoEmptySpaces =
-        marks.filter((mark) => mark === Mark.EMPTY).length === 2;
-
-      if (hasOnePlayerOMark && hasTwoEmptySpaces) {
-        const sequencePositions = sequenceToCompare.marks.map(
-          (_, index) =>
-            sequenceToCompare.startOffset +
-            index * sequenceToCompare.nextValueOffset,
+      if (this.isIntersectableSequence(marks, playerMark)) {
+        const sequencePositions = sequenceToCompare.marks.map((_, index) =>
+          this.getDefinitiveMarkPosition(
+            sequenceToCompare.startOffset,
+            sequenceToCompare.nextValueOffset,
+            index,
+          ),
         );
-        const intersectionPosition = marks.findIndex((mark, index) => {
-          const currentPosition = startOffset + index * nextValueOffset;
+        const intersectionPosition = marks.findIndex((mark, position) => {
+          const definitivePosition = this.getDefinitiveMarkPosition(
+            startOffset,
+            nextValueOffset,
+            position,
+          );
+
           return (
-            sequencePositions.includes(currentPosition) && mark === Mark.EMPTY
+            sequencePositions.includes(definitivePosition) &&
+            mark === Mark.EMPTY
           );
         });
 
-        if (intersectionPosition !== -1) {
-          return startOffset + intersectionPosition * nextValueOffset;
+        if (this.isValidBoardPosition(intersectionPosition)) {
+          return this.getDefinitiveMarkPosition(
+            startOffset,
+            nextValueOffset,
+            intersectionPosition,
+          );
         }
       }
     }
+  }
 
-    return -1;
+  private isIntersectableSequence(marks: Mark[], playerMark: Mark) {
+    const hasOnePlayerMark =
+      marks.filter((mark) => mark === playerMark).length === 1;
+    const hasTwoEmptySpaces =
+      marks.filter((mark) => mark === Mark.EMPTY).length === 2;
+    return hasOnePlayerMark && hasTwoEmptySpaces;
   }
 
   private playCenter(board: Board): number {
-    if (board.boardCenter === Mark.EMPTY) return 4;
-
-    return -1;
+    if (board.boardCenter === Mark.EMPTY) return BoardPosition.MIDDLE;
   }
 
   private playOppositeCorner(board: Board): number {
@@ -248,17 +255,18 @@ export class TicTacToeService {
     playerMark: Mark,
   ): number {
     const availablePosition = marks.findIndex(
-      (currentMark, index) => currentMark === Mark.EMPTY && index != 1,
+      (mark, index) => mark === Mark.EMPTY && index != SequencePosition.MIDDLE,
     );
     const playerPosition = marks.findIndex(
-      (currentMark, index) => currentMark === playerMark && index != 1,
+      (mark, index) => mark === playerMark && index != SequencePosition.MIDDLE,
     );
 
-    if (availablePosition !== -1 && playerPosition !== -1) {
+    if (
+      this.isValidBoardPosition(availablePosition) &&
+      this.isValidBoardPosition(playerPosition)
+    ) {
       return availablePosition;
     }
-
-    return -1;
   }
 
   private playEmptyCorner(board: Board): number {
@@ -280,11 +288,9 @@ export class TicTacToeService {
       (currentMark, index) => currentMark === Mark.EMPTY && index != 1,
     );
 
-    if (availablePosition !== -1) {
+    if (this.isValidBoardPosition(availablePosition)) {
       return availablePosition;
     }
-
-    return -1;
   }
 
   private getMovePositionByCondition(
@@ -295,13 +301,26 @@ export class TicTacToeService {
     for (const { startOffset, nextValueOffset, marks } of sequences) {
       const availablePosition = conditionToMakeMove(marks, playerMark);
 
-      if (availablePosition !== -1) {
-        const nextMovePosition =
-          startOffset + availablePosition * nextValueOffset;
+      if (this.isValidBoardPosition(availablePosition)) {
+        const nextMovePosition = this.getDefinitiveMarkPosition(
+          startOffset,
+          nextValueOffset,
+          availablePosition,
+        );
         return nextMovePosition;
       }
     }
+  }
 
-    return -1;
+  private getDefinitiveMarkPosition(
+    startOffset: number,
+    nextValueOffset: number,
+    positionInSequence: number,
+  ): number {
+    return startOffset + nextValueOffset * positionInSequence;
+  }
+
+  private isValidBoardPosition(position: number): boolean {
+    return Object.values(BoardPosition).includes(position);
   }
 }

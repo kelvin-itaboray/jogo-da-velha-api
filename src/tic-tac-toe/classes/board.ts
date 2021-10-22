@@ -1,8 +1,11 @@
+import { BoardPosition } from '../enums/board-position.enum';
 import { Mark } from '../enums/mark.enum';
+import { SequencePosition } from '../enums/sequence-position.enum';
+import { TicTacToeConstants as Constants } from '../tic-tac-toe.constants';
 import { Sequence } from './sequence';
 
 export class Board {
-  private _board: string;
+  private _boardText: string;
   private _row1: Sequence;
   private _row2: Sequence;
   private _row3: Sequence;
@@ -12,20 +15,52 @@ export class Board {
   private _diagonal1: Sequence;
   private _diagonal2: Sequence;
 
-  constructor(board: string) {
-    this._board = board;
-    this._row1 = new Sequence(board.substring(0, 3), 0, 1);
-    this._row2 = new Sequence(board.substring(3, 6), 3, 1);
-    this._row3 = new Sequence(board.substring(6, 9), 6, 1);
-    this._column1 = new Sequence(`${board[0]}${board[3]}${board[6]}`, 0, 3);
-    this._column2 = new Sequence(`${board[1]}${board[4]}${board[7]}`, 1, 3);
-    this._column3 = new Sequence(`${board[2]}${board[5]}${board[8]}`, 2, 3);
-    this._diagonal1 = new Sequence(`${board[0]}${board[4]}${board[8]}`, 0, 4);
-    this._diagonal2 = new Sequence(`${board[2]}${board[4]}${board[6]}`, 2, 2);
+  constructor(boardText: string) {
+    this._boardText = boardText;
+    this._row1 = new Sequence(
+      boardText.substring(0, 3),
+      BoardPosition.TOP_LEFT,
+      Constants.ROW_OFFSET,
+    );
+    this._row2 = new Sequence(
+      boardText.substring(3, 6),
+      BoardPosition.MIDDLE_LEFT,
+      Constants.ROW_OFFSET,
+    );
+    this._row3 = new Sequence(
+      boardText.substring(6, 9),
+      BoardPosition.BOTTOM_LEFT,
+      Constants.ROW_OFFSET,
+    );
+    this._column1 = new Sequence(
+      `${boardText[0]}${boardText[3]}${boardText[6]}`,
+      BoardPosition.TOP_LEFT,
+      Constants.COLUMN_OFFSET,
+    );
+    this._column2 = new Sequence(
+      `${boardText[1]}${boardText[4]}${boardText[7]}`,
+      BoardPosition.TOP_MIDDLE,
+      Constants.COLUMN_OFFSET,
+    );
+    this._column3 = new Sequence(
+      `${boardText[2]}${boardText[5]}${boardText[8]}`,
+      BoardPosition.TOP_RIGHT,
+      Constants.COLUMN_OFFSET,
+    );
+    this._diagonal1 = new Sequence(
+      `${boardText[0]}${boardText[4]}${boardText[8]}`,
+      BoardPosition.TOP_LEFT,
+      Constants.LEFT_TO_RIGHT_DIAGONAL_OFFSET,
+    );
+    this._diagonal2 = new Sequence(
+      `${boardText[2]}${boardText[4]}${boardText[6]}`,
+      BoardPosition.TOP_RIGHT,
+      Constants.RIGHT_TO_LEFT_DIAGONAL_OFFSET,
+    );
   }
 
-  get board(): string {
-    return this._board;
+  get boardText(): string {
+    return this._boardText;
   }
 
   get sequences(): Sequence[] {
@@ -58,6 +93,6 @@ export class Board {
   }
 
   get boardCenter(): Mark {
-    return this._row2.marks[1];
+    return this._row2.marks[SequencePosition.MIDDLE];
   }
 }
