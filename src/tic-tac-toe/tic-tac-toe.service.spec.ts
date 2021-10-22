@@ -122,44 +122,22 @@ describe('TicTacToeService', () => {
       });
     });
 
-    // FIXME consertar falsos-positivos
     describe('if the next move can possibly create a fork for player o', () => {
-      describe('and player o currently has positions 5 and 9 marked', () => {
-        it('should create a fork by placing a mark at position 3 in the board', () => {
-          expect(service.makeMove('xx  o   o')).toEqual('xxo o   o');
-        });
-      });
-
-      describe('and player o currently has positions 6 and 8 marked', () => {
-        it('should create a fork by placing a mark at position 9 in the board', () => {
-          expect(service.makeMove('x   xo o ')).toEqual('x   xo oo');
-        });
-      });
-
-      describe('and player o currently has positions 1 and 9 marked', () => {
-        it('should create a fork by placing a mark at position 3 in the board', () => {
-          expect(service.makeMove('o   x x o')).toEqual('o o x x o');
-        });
+      it('should create a fork by placing a mark at intersection that creates a fork in the board', () => {
+        expect(service.makeMove('xox     o')).toEqual('xox    oo');
       });
     });
 
-    // FIXME consertar falsos-positivos
     describe('if the next move can possibly create a fork for player x', () => {
-      describe('and player x currently has positions 5 and 9 marked', () => {
-        it('should block the fork by placing a mark at position 3 in the board', () => {
-          expect(service.makeMove('oo  x   x')).toEqual('ooo x   x');
+      describe('and it is possible for player o to make a two in a row', () => {
+        it('should make a two in a row to avoid player x from blocking', () => {
+          expect(service.makeMove('x   o   x')).toEqual('x  oo   x');
         });
       });
 
-      describe('and player x currently has positions 6 and 8 marked', () => {
-        it('should block the fork by placing a mark at position 9 in the board', () => {
-          expect(service.makeMove('o   ox x ')).toEqual('o   ox xo');
-        });
-      });
-
-      describe('and player x currently has positions 1 and 9 marked', () => {
-        it('should block the fork by placing a mark at position 3 in the board', () => {
-          expect(service.makeMove('x   o o x')).toEqual('x o o o x');
+      describe('and it is not possible for player o to make a two in a row', () => {
+        it('should block the fork by placing a mark at intersection that creates a fork in the board', () => {
+          expect(service.makeMove('o   x   x')).toEqual('o o x   x');
         });
       });
     });
