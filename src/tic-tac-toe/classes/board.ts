@@ -41,6 +41,14 @@ export class Board {
     ];
   }
 
+  get rowSequences(): Sequence[] {
+    return [this._row1, this._row2, this._row3];
+  }
+
+  get columnSequences(): Sequence[] {
+    return [this._column1, this._column2, this._column3];
+  }
+
   get diagonalSequences(): Sequence[] {
     return [this._diagonal1, this._diagonal2];
   }
