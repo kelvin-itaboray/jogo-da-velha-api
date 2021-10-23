@@ -121,14 +121,10 @@ export class TicTacToeService {
   }
 
   private blockFork(board: Board): number {
-    const currentBoardIntersections = this.getIntersectionsInBoard(
+    const currentIntersections = this.getIntersectionsInBoard(
       board,
       Mark.PLAYER_X,
     );
-
-    if (currentBoardIntersections.length === 1) {
-      return currentBoardIntersections[0];
-    }
 
     for (const { startOffset, nextValueOffset, marks } of board.sequences) {
       if (this.isIntersectableSequence(marks, Mark.PLAYER_O)) {
@@ -136,7 +132,7 @@ export class TicTacToeService {
 
         for (const markPosition of markPositions) {
           if (marks[markPosition] === Mark.EMPTY) {
-            const markPositionInBoard = this.getDefinitiveMarkPosition(
+            const markPositionInBoard = this.getMarkPositionInBoard(
               startOffset,
               nextValueOffset,
               markPosition,
@@ -146,24 +142,18 @@ export class TicTacToeService {
               markPositionInBoard,
             );
             const updatedBoard = new Board(updatedBoardText);
-            const updatedBoardIntersections = this.getIntersectionsInBoard(
+            const updatedIntersections = this.getIntersectionsInBoard(
               updatedBoard,
               Mark.PLAYER_X,
             );
 
-            if (
-              updatedBoardIntersections.length <
-              currentBoardIntersections.length
-            ) {
+            if (updatedIntersections.length < currentIntersections.length) {
               return markPositionInBoard;
             }
           }
         }
       }
     }
-
-    if (currentBoardIntersections.length > 0)
-      return currentBoardIntersections[0];
   }
 
   private getIntersectionsInBoard(
@@ -177,28 +167,19 @@ export class TicTacToeService {
       playerMark,
       stopOnFirstResult,
     );
-    if (stopOnFirstResult && intersectionsWithLines.length >= 1) {
+
+    if (stopOnFirstResult && intersectionsWithLines.length === 1) {
       return intersectionsWithLines;
     }
 
-    const intersectionsWithColumns = this.getIntersectionsBetweenSequences(
-      board.columnSequences,
-      board.diagonalSequences,
-      playerMark,
-      stopOnFirstResult,
-    );
-    if (stopOnFirstResult && intersectionsWithLines.length >= 1) {
-      return intersectionsWithColumns;
-    }
-
-    return [...intersectionsWithLines, ...intersectionsWithColumns];
+    return intersectionsWithLines;
   }
 
   private getIntersectionsBetweenSequences(
     sequences: Sequence[],
     sequencesToCompare: Sequence[],
     playerMark: Mark,
-    stopOnFirstResult = false,
+    stopOnFirstResult: boolean,
   ): number[] {
     const intersections: number[] = [];
 
@@ -228,14 +209,14 @@ export class TicTacToeService {
     for (const { startOffset, nextValueOffset, marks } of sequences) {
       if (this.isIntersectableSequence(marks, playerMark)) {
         const sequencePositions = sequenceToCompare.marks.map((_, index) =>
-          this.getDefinitiveMarkPosition(
+          this.getMarkPositionInBoard(
             sequenceToCompare.startOffset,
             sequenceToCompare.nextValueOffset,
             index,
           ),
         );
         const intersectionPosition = marks.findIndex((mark, position) => {
-          const positionInBoard = this.getDefinitiveMarkPosition(
+          const positionInBoard = this.getMarkPositionInBoard(
             startOffset,
             nextValueOffset,
             position,
@@ -247,7 +228,7 @@ export class TicTacToeService {
         });
 
         if (this.isValidBoardPosition(intersectionPosition)) {
-          return this.getDefinitiveMarkPosition(
+          return this.getMarkPositionInBoard(
             startOffset,
             nextValueOffset,
             intersectionPosition,
@@ -330,7 +311,7 @@ export class TicTacToeService {
       const availablePosition = conditionToMakeMove(marks, playerMark);
 
       if (this.isValidBoardPosition(availablePosition)) {
-        const nextMovePosition = this.getDefinitiveMarkPosition(
+        const nextMovePosition = this.getMarkPositionInBoard(
           startOffset,
           nextValueOffset,
           availablePosition,
@@ -340,7 +321,7 @@ export class TicTacToeService {
     }
   }
 
-  private getDefinitiveMarkPosition(
+  private getMarkPositionInBoard(
     startOffset: number,
     nextValueOffset: number,
     positionInSequence: number,
