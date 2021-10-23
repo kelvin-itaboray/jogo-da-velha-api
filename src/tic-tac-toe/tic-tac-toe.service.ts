@@ -126,6 +126,8 @@ export class TicTacToeService {
       Mark.PLAYER_X,
     );
 
+    if (currentIntersections.length === 1) return currentIntersections[0];
+
     for (const { startOffset, nextValueOffset, marks } of board.sequences) {
       if (this.isIntersectableSequence(marks, Mark.PLAYER_O)) {
         const markPositions = marks.map((_, index) => index);

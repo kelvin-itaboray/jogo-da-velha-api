@@ -154,6 +154,12 @@ describe('TicTacToeService', () => {
     });
 
     describe('if the next move can possibly create a fork for player x', () => {
+      describe('and there is only one possible fork for player x', () => {
+        it('should place a mark at intersection that creates a fork', () => {
+          expect(service.makeMove('oxox     ')).toEqual('oxoxo    ');
+        });
+      });
+
       describe('and it is possible for player o to make a two in a row', () => {
         it('should make a two in a row to avoid player x from blocking', () => {
           expect(service.makeMove('x   o   x')).toEqual('x  oo   x');
