@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TicTacToeService } from './tic-tac-toe.service';
 import { TicTacToeController } from './tic-tac-toe.controller';
+import { TicTacToeService } from './tic-tac-toe.service';
 
 @Module({
   providers: [TicTacToeService],
