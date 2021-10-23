@@ -31,6 +31,22 @@ describe('TicTacToeService', () => {
       });
     });
 
+    describe('if player o already won the game', () => {
+      it('should return BadRequestException', () => {
+        expect(() => service.makeMove('ooox x x ')).toThrow(
+          new BadRequestException(TicTacToeException.GAME_ALREADY_FINISHED),
+        );
+      });
+    });
+
+    describe('if player x already won the game', () => {
+      it('should return BadRequestException', () => {
+        expect(() => service.makeMove('o o o xxx')).toThrow(
+          new BadRequestException(TicTacToeException.GAME_ALREADY_FINISHED),
+        );
+      });
+    });
+
     describe('if the next move makes player o win', () => {
       describe('and player o has 2 horizontal marks in the first row', () => {
         it('should place a third mark next to them', () => {
@@ -171,9 +187,9 @@ describe('TicTacToeService', () => {
           });
         });
 
-        describe('and an empty edge is available', () => {
-          it('should place a mark at first available edge', () => {
-            expect(service.makeMove('xoxoxxo o')).toEqual('xoxoxxooo');
+        describe('and an empty side is available', () => {
+          it('should place a mark at first available side', () => {
+            expect(service.makeMove('xox oxoxo')).toEqual('xoxooxoxo');
           });
         });
       });
